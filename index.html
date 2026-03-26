@@ -1,0 +1,596 @@
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DNA半保留复制实验模拟器 | Meselson-Stahl实验</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: #eef3e8;
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        /* 实验步骤卡片 */
+        .steps {
+            background: #2c3e2b;
+            border-radius: 40px;
+            padding: 15px 25px;
+            margin-bottom: 30px;
+            color: #f9f3cf;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+        }
+        .steps h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.3rem;
+        }
+        .step-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .step {
+            background: #4a6741;
+            padding: 6px 15px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        /* 实验台 */
+        .lab-bench {
+            background: #dac292;
+            border-radius: 48px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: inset 0 1px 8px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.2);
+            border: 2px solid #b97f44;
+        }
+        .bench-title {
+            background: #4a3a28;
+            display: inline-block;
+            padding: 5px 20px;
+            border-radius: 40px;
+            color: #ffeaac;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .items-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 20px;
+        }
+        .lab-item {
+            background: #fef1cf;
+            width: 160px;
+            border-radius: 24px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border: 1px solid #c2a15b;
+        }
+        .lab-item.selected {
+            background: #ffdd99;
+            box-shadow: 0 0 0 3px #ffaa33;
+            transform: scale(1.02);
+        }
+        .item-emoji {
+            font-size: 3rem;
+        }
+        .item-name {
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin: 8px 0 4px;
+        }
+        .item-status {
+            font-size: 0.7rem;
+            color: #5a3e1f;
+            min-height: 2.5rem;
+        }
+        /* 消息栏 */
+        .message-area {
+            background: #2e3820;
+            color: #fff2b5;
+            padding: 8px 16px;
+            border-radius: 40px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        /* 离心机区域 */
+        .centri-area {
+            background: #445f6b;
+            border-radius: 48px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+        }
+        .tube-rack {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .centri-tube {
+            background: #e2eef5;
+            width: 150px;
+            border-radius: 60px 60px 30px 30px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: inset 0 -8px 0 #a0bbc9, 0 4px 10px black;
+            cursor: pointer;
+        }
+        .centri-tube.filled {
+            background: #bddbe8;
+            box-shadow: inset 0 -5px 0 #6d8ea0;
+        }
+        .centri-machine {
+            background: #97adb8;
+            display: inline-block;
+            padding: 15px 25px;
+            border-radius: 40px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .result-panel {
+            margin-top: 25px;
+            background: #1e2f3a;
+            border-radius: 32px;
+            padding: 20px;
+            display: none;
+        }
+        .bands-row {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .band-canvas {
+            background: #14262e;
+            border-radius: 60px;
+            padding: 10px;
+            text-align: center;
+        }
+        button.reset-btn {
+            background: #ffaa44;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 30px;
+            color: #5f7352;
+        }
+        .info-tip {
+            background: #3a3f2e;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            color: #fffaec;
+            display: inline-block;
+        }
+        .reset-button {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 步骤区 -->
+    <div class="steps">
+        <h3>📋 实验操作流程</h3>
+        <div class="step-list">
+            <div class="step">1️⃣ 大肠杆菌在¹⁵N中培养</div>
+            <div class="step">2️⃣ 提取部分DNA（亲代）冷藏</div>
+            <div class="step">3️⃣ 转至¹⁴N繁殖一代，取样（子一代）</div>
+            <div class="step">4️⃣ 再繁殖一代，取样（子二代）</div>
+            <div class="step">5️⃣ 密度梯度离心（CsCl，44,770 rpm，20h）</div>
+            <div class="step">6️⃣ 紫外吸收显带与拍照</div>
+        </div>
+    </div>
+
+    <!-- 实验台 -->
+    <div class="lab-bench" id="labBench">
+        <div class="bench-title">🔬 细菌培养与DNA提取台</div>
+        <div class="items-row" id="benchItems"></div>
+        <div id="labMessage" class="message-area">💡 点击物品选中，再点击目标位置（培养基/裂解液）进行转移</div>
+    </div>
+
+    <!-- 离心机区 (初始隐藏) -->
+    <div id="centriZone" class="centri-area">
+        <div style="font-weight:bold; color:#f9e0a0; margin-bottom:12px;">
+            🧪 密度梯度离心站 &nbsp;|&nbsp;
+            <span class="info-tip" id="csclTip">🧴 CsCl溶液 (悬停看参数)</span>
+        </div>
+        <div class="tube-rack" id="tubeRack">
+            <div class="centri-tube" data-target="parent">🧬 亲代DNA离心管<br><span class="tube-status">待加样</span></div>
+            <div class="centri-tube" data-target="f1">🧬 子一代DNA离心管<br><span class="tube-status">待加样</span></div>
+            <div class="centri-tube" data-target="f2">🧬 子二代DNA离心管<br><span class="tube-status">待加样</span></div>
+        </div>
+        <div style="text-align: center;">
+            <div id="centriMachine" class="centri-machine">⚙️ 超速离心机 (44,770 rpm)<br>点击开始离心</div>
+            <div id="centriMsg" class="message-area" style="margin-top:12px;">⏳ 等待加入DNA样本</div>
+        </div>
+        <div id="resultPanel" class="result-panel">
+            <h4 style="color:#c3e2f7; text-align:center;">📸 紫外吸收条带 (实验结果)</h4>
+            <div id="bandsResult" class="bands-row"></div>
+        </div>
+    </div>
+    
+    <div class="reset-button">
+        <button id="resetExp" class="reset-btn">🔄 重新开始实验</button>
+    </div>
+    <footer>🎓 基于Meselson & Stahl真实实验数据 | 半保留复制模型 | 培养1代/2代各模拟5秒 (实际50分钟)</footer>
+</div>
+
+<script>
+    // ---------- 实验状态 ----------
+    let state = {
+        items: {
+            bacteria15: { name: "大肠杆菌 (¹⁵N全标记)", status: "已培养14代以上 (可取样)", emoji: "🧫", canUse: true, usedForParent: false, usedForInoculate: false },
+            medium14: { name: "¹⁴N培养基", status: "无菌培养液", emoji: "🧪", content: null, canReceive: true },
+            lysisParent: { name: "裂解液①", status: "空", emoji: "🧴", dnaType: null },
+            lysisF1: { name: "裂解液②", status: "空", emoji: "🧴", dnaType: null },
+            lysisF2: { name: "裂解液③", status: "空", emoji: "🧴", dnaType: null }
+        },
+        selectedItemId: null,
+        parentCollected: false,
+        firstGenReady: false,
+        secondGenReady: false,
+        f1Sampled: false,
+        f2Sampled: false,
+        timerActive: false,
+        centriReady: false,
+        parentTubeFilled: false,
+        f1TubeFilled: false,
+        f2TubeFilled: false,
+        centrifugeDone: false
+    };
+
+    const benchDiv = document.getElementById('benchItems');
+    const labMsg = document.getElementById('labMessage');
+    const centriZone = document.getElementById('centriZone');
+    const centriMachine = document.getElementById('centriMachine');
+    const centriMsgSpan = document.getElementById('centriMsg');
+    const resultPanel = document.getElementById('resultPanel');
+    const resetBtn = document.getElementById('resetExp');
+
+    // 辅助函数：刷新实验台UI
+    function renderBench() {
+        benchDiv.innerHTML = '';
+        const order = ['bacteria15', 'medium14', 'lysisParent', 'lysisF1', 'lysisF2'];
+        order.forEach(id => {
+            const it = state.items[id];
+            const div = document.createElement('div');
+            div.className = `lab-item ${state.selectedItemId === id ? 'selected' : ''}`;
+            div.dataset.id = id;
+            div.innerHTML = `
+                <div class="item-emoji">${it.emoji}</div>
+                <div class="item-name">${it.name}</div>
+                <div class="item-status">${it.status}</div>
+            `;
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleItemClick(id);
+            });
+            benchDiv.appendChild(div);
+        });
+        // 如果离心区已经显示，重新绑定裂解液加样事件，确保事件不丢失
+        if (state.centriReady && !state.centrifugeDone) {
+            bindLysisToTubeEvents();
+        }
+    }
+
+    function showMessage(msg, isError = false) {
+        labMsg.innerHTML = msg;
+        labMsg.style.background = isError ? '#882222cc' : '#2e3820cc';
+        setTimeout(() => {
+            if (labMsg.innerHTML === msg) {
+                labMsg.innerHTML = '💡 点击物品选中，再点击目标位置（培养基/裂解液）进行转移';
+                labMsg.style.background = '#2e3820cc';
+            }
+        }, 4000);
+    }
+
+    function clearSelected() {
+        state.selectedItemId = null;
+        renderBench();
+    }
+
+    // 核心转移逻辑
+    function attemptTransfer(srcId, dstId) {
+        const src = state.items[srcId];
+        const dst = state.items[dstId];
+
+        // 1. 亲代取样: 细菌15N → 裂解液① (且亲代未取样)
+        if (srcId === 'bacteria15' && dstId === 'lysisParent' && !state.parentCollected && dst.status === '空') {
+            src.status = "已取亲代DNA (仍有剩余)";
+            src.usedForParent = true;
+            dst.status = "✅ 亲代DNA (全¹⁵N)";
+            dst.dnaType = 'parent';
+            state.parentCollected = true;
+            showMessage("亲代DNA已加入裂解液①！现在请将部分细菌转移到 ¹⁴N 培养基中开始繁殖第一代。");
+            clearSelected();
+            renderBench();
+            return true;
+        }
+        // 2. 转移细菌到14N培养基 (开始第一代培养，且未接种过)
+        if (srcId === 'bacteria15' && dstId === 'medium14' && !state.firstGenReady && !state.secondGenReady && state.items.medium14.content === null) {
+            src.status = "已接种到¹⁴N (仍有剩余)";
+            src.usedForInoculate = true;
+            state.items.medium14.content = 'bacteria';
+            state.items.medium14.status = "🟢 含大肠杆菌 (培养中)";
+            showMessage("已接种到¹⁴N培养基，开始繁殖一代（约需50分钟）...");
+            startTimer('first');
+            clearSelected();
+            renderBench();
+            return true;
+        }
+        // 3. 第一代繁殖完成后，从14N培养基取样到裂解液②
+        if (srcId === 'medium14' && dstId === 'lysisF1' && state.firstGenReady && !state.f1Sampled && state.items.medium14.content !== null && state.items.lysisF1.status === '空') {
+            state.items.lysisF1.status = "✅ 子一代DNA (杂交¹⁵N-¹⁴N)";
+            state.items.lysisF1.dnaType = 'f1';
+            state.f1Sampled = true;
+            state.items.medium14.content = 'bacteria_remaining';
+            state.items.medium14.status = "含子一代菌液 (继续培养子二代)";
+            showMessage("子一代DNA已加入裂解液②。继续培养第二代...");
+            startTimer('second');
+            clearSelected();
+            renderBench();
+            return true;
+        }
+        // 4. 第二代繁殖完成后，从14N培养基取样到裂解液③
+        if (srcId === 'medium14' && dstId === 'lysisF2' && state.secondGenReady && !state.f2Sampled && state.items.medium14.content !== null && state.items.lysisF2.status === '空') {
+            state.items.lysisF2.status = "✅ 子二代DNA (杂交+轻链混合)";
+            state.items.lysisF2.dnaType = 'f2';
+            state.f2Sampled = true;
+            state.items.medium14.content = null;
+            state.items.medium14.status = "已取样完成";
+            showMessage("子二代DNA已加入裂解液③！所有样本收集完毕，进入离心阶段。");
+            clearSelected();
+            renderBench();
+            checkAllSamplesCollected();
+            return true;
+        }
+        showMessage("无效操作，请按实验步骤顺序进行。", true);
+        return false;
+    }
+
+    // 计时器模拟培养 (5秒代表50分钟)
+    function startTimer(generation) {
+        if (state.timerActive) return;
+        state.timerActive = true;
+        let seconds = 5;
+        const interval = setInterval(() => {
+            if (seconds <= 0) {
+                clearInterval(interval);
+                state.timerActive = false;
+                if (generation === 'first') {
+                    state.firstGenReady = true;
+                    state.items.medium14.status = '✔ 第一代繁殖完成 (50分钟) 请取出子一代DNA加入裂解液②';
+                    showMessage("✅ 50分钟到，大肠杆菌已繁殖一代！请将子一代细菌样本加入裂解液②中。");
+                } else if (generation === 'second') {
+                    state.secondGenReady = true;
+                    state.items.medium14.status = '✔ 第二代繁殖完成 (50分钟) 请取出子二代DNA加入裂解液③';
+                    showMessage("✅ 50分钟到，大肠杆菌子二代DNA复制完成！请将子二代细菌加入裂解液③。");
+                }
+                renderBench();
+            } else {
+                labMsg.innerHTML = `⏳ 培养中... 剩余 ${seconds} 秒 (模拟50分钟)`;
+                seconds--;
+            }
+        }, 1000);
+    }
+
+    // 检查所有裂解液是否收集完毕
+    function checkAllSamplesCollected() {
+        if (state.parentCollected && state.f1Sampled && state.f2Sampled && !state.centriReady) {
+            state.centriReady = true;
+            centriZone.style.display = 'block';
+            showMessage("🎉 三份DNA样本均已制备！现在直接点击裂解液瓶，即可将DNA加入对应离心管。");
+            bindLysisToTubeEvents(); // 立即绑定加样事件
+        }
+    }
+
+    // 为裂解液添加加样到离心管的交互（直接点击裂解液自动加样到对应离心管）
+    function bindLysisToTubeEvents() {
+        const lysisIds = ['lysisParent', 'lysisF1', 'lysisF2'];
+        lysisIds.forEach(id => {
+            const element = document.querySelector(`.lab-item[data-id="${id}"]`);
+            if (element && !element._lysisBound) {
+                element._lysisBound = true;
+                element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!state.centriReady || state.centrifugeDone) return;
+                    const lysisItem = state.items[id];
+                    if (lysisItem.status === '空') {
+                        showMessage("该裂解液中没有DNA样本", true);
+                        return;
+                    }
+                    let targetTube = null;
+                    if (id === 'lysisParent') targetTube = 'parent';
+                    if (id === 'lysisF1') targetTube = 'f1';
+                    if (id === 'lysisF2') targetTube = 'f2';
+                    const tubeDiv = document.querySelector(`.centri-tube[data-target="${targetTube}"]`);
+                    if (!tubeDiv) return;
+                    const tubeStatusSpan = tubeDiv.querySelector('.tube-status');
+                    if (tubeDiv.classList.contains('filled')) {
+                        showMessage("该离心管已有DNA样本", true);
+                        return;
+                    }
+                    // 加样
+                    tubeDiv.classList.add('filled');
+                    tubeStatusSpan.innerText = "✅ 已加样";
+                    if (targetTube === 'parent') state.parentTubeFilled = true;
+                    if (targetTube === 'f1') state.f1TubeFilled = true;
+                    if (targetTube === 'f2') state.f2TubeFilled = true;
+                    showMessage(`已将${lysisItem.name}加入${tubeDiv.querySelector('.tube-label')?.innerText || '离心管'}`);
+                    checkAllTubesFilled();
+                });
+            }
+        });
+    }
+
+    function checkAllTubesFilled() {
+        if (state.parentTubeFilled && state.f1TubeFilled && state.f2TubeFilled && !state.centrifugeDone) {
+            centriMsgSpan.innerHTML = "✅ 所有DNA样本已放入离心管，可以开始离心！";
+        } else {
+            centriMsgSpan.innerHTML = `⚙️ 样本未集齐 (亲代:${state.parentTubeFilled?"✓":"✗"} 子一代:${state.f1TubeFilled?"✓":"✗"} 子二代:${state.f2TubeFilled?"✓":"✗"})`;
+        }
+    }
+
+    // 离心机启动
+    function startCentrifuge() {
+        if (!state.parentTubeFilled || !state.f1TubeFilled || !state.f2TubeFilled) {
+            showMessage("请先将所有DNA样本加入对应离心管!", true);
+            return;
+        }
+        if (state.centrifugeDone) return;
+        centriMsgSpan.innerHTML = "🌀 离心进行中 (20小时模拟) ...";
+        centriMachine.style.pointerEvents = "none";
+        setTimeout(() => {
+            state.centrifugeDone = true;
+            centriMsgSpan.innerHTML = "✅ 20小时离心已完成！紫外显影中...";
+            showFinalResult();
+        }, 2000);
+    }
+
+    // 绘制最终条带
+    function drawTubeResult(ctx, bands, w, h) {
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#14262e";
+        ctx.fillRect(0, 0, w, h);
+        bands.forEach(band => {
+            const yCenter = band.yPos * h;
+            const bandH = 20;
+            const yTop = yCenter - bandH/2;
+            let color = band.type === 'heavy' ? '#2c6e9e' : (band.type === 'hybrid' ? '#4f9faf' : '#7bcbd8');
+            const width = 60 + band.ratio * 60;
+            const xStart = (w - width)/2;
+            ctx.fillStyle = color;
+            ctx.fillRect(xStart, yTop, width, bandH);
+            ctx.strokeStyle = "#fff";
+            ctx.strokeRect(xStart, yTop, width, bandH);
+        });
+    }
+
+    function showFinalResult() {
+        resultPanel.style.display = "block";
+        const bandsContainer = document.getElementById('bandsResult');
+        bandsContainer.innerHTML = '';
+        const results = [
+            { title: "亲代 DNA (全¹⁵N)", bands: [{ type: "heavy", ratio: 1.0, yPos: 0.78 }] },
+            { title: "子一代 DNA (杂交)", bands: [{ type: "hybrid", ratio: 1.0, yPos: 0.55 }] },
+            { title: "子二代 DNA (1:1杂交+轻链)", bands: [{ type: "hybrid", ratio: 0.5, yPos: 0.55 }, { type: "light", ratio: 0.5, yPos: 0.32 }] }
+        ];
+        results.forEach(res => {
+            const canvas = document.createElement("canvas");
+            canvas.width = 150;
+            canvas.height = 220;
+            canvas.style.margin = "10px";
+            canvas.style.background = "#14262e";
+            canvas.style.borderRadius = "50px";
+            const ctx = canvas.getContext("2d");
+            drawTubeResult(ctx, res.bands, 150, 220);
+            const div = document.createElement("div");
+            div.style.textAlign = "center";
+            div.innerHTML = `<strong style="color:#cfefff;">${res.title}</strong><br>`;
+            div.appendChild(canvas);
+            bandsContainer.appendChild(div);
+        });
+        centriMsgSpan.innerHTML = "🎉 实验完成！紫外条带符合半保留复制模型。";
+    }
+
+    // 物品点击处理：选中或转移
+    function handleItemClick(id) {
+        if (state.centrifugeDone) {
+            showMessage("实验已完成，请按「重新开始实验」按钮重置", true);
+            return;
+        }
+        // 如果有选中的物品，尝试转移
+        if (state.selectedItemId && state.selectedItemId !== id) {
+            attemptTransfer(state.selectedItemId, id);
+            clearSelected();
+            return;
+        }
+        // 否则选中当前物品（只有可转移的物品才允许选中）
+        const item = state.items[id];
+        const canSelect = (id === 'bacteria15' && (!state.parentCollected || !state.firstGenReady)) ||
+                          (id === 'medium14' && state.firstGenReady && !state.f1Sampled) ||
+                          (id === 'medium14' && state.secondGenReady && !state.f2Sampled) ||
+                          id === 'lysisParent' || id === 'lysisF1' || id === 'lysisF2';
+        if (canSelect) {
+            state.selectedItemId = id;
+            showMessage(`已选中: ${item.name}，请点击目标位置(培养基/裂解液)`);
+            renderBench();
+        } else {
+            showMessage("当前物品不可转移或已无样本", true);
+        }
+    }
+
+    // 重置实验
+    function resetExperiment() {
+        location.reload();
+    }
+
+    // 悬停提示
+    function addHoverInfo() {
+        const bacteriaDiv = document.querySelector('.lab-item[data-id="bacteria15"]');
+        if (bacteriaDiv) {
+            bacteriaDiv.addEventListener('mouseenter', () => {
+                labMsg.innerHTML = "🧫 菌株：Escherichia coli B株 | 唯一氮源¹⁵NH₄Cl (96.5%) | 14代以上，36℃通气培养，获得全重DNA";
+            });
+            bacteriaDiv.addEventListener('mouseleave', () => {
+                labMsg.innerHTML = '💡 点击物品选中，再点击目标位置（培养基/裂解液）进行转移';
+            });
+        }
+        const csclTip = document.getElementById('csclTip');
+        if (csclTip) {
+            csclTip.addEventListener('mouseenter', () => {
+                labMsg.innerHTML = "🧪 CsCl溶液，密度~1.71 g/cm³ | 离心: 44,770 rpm, 20小时, 25°C | DNA浮力密度差异形成条带";
+            });
+            csclTip.addEventListener('mouseleave', () => {
+                labMsg.innerHTML = '💡 点击物品选中，再点击目标位置（培养基/裂解液）进行转移';
+            });
+        }
+    }
+
+    // 初始化
+    function init() {
+        renderBench();
+        addHoverInfo();
+        centriMachine.addEventListener('click', startCentrifuge);
+        resetBtn.addEventListener('click', resetExperiment);
+        // 定时检查离心管加样状态
+        setInterval(() => {
+            if (state.centriReady && !state.centrifugeDone) {
+                checkAllTubesFilled();
+            }
+        }, 300);
+    }
+    init();
+</script>
+</body>
+</html>
+```
